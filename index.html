@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ナンバープレイス</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css">
+    <style type="text/css">
+        #visualizer input {
+            height: auto;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js"></script>
+    <script src="./dist/index.js" type="text/javascript"></script>
+</head>
+
+<body>
+    <div class="ui container aligned" id="visualizer">
+        <div class="ui form">
+            <div class="inline fields">
+                <div class="field">
+                    <div class="ui labeled input">
+                        <div class="ui label">
+                            score
+                        </div>
+                        <input id="scoreInput" type="input" readonly />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <canvas id="canvas"></canvas>
+        </div>
+
+    </div>
+
+</body>
+</html>
