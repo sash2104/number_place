@@ -64,22 +64,10 @@ module framework {
   }
 
   export class Game {
-    public readonly N: number = 4;
+    public readonly N: number = 9;
     public grid: number[][] = [];
     public score: number;
     public random: Random;
-
-    private spawnValues: number[] = [2, 2, 2, 2, 2, 4];
-
-    // left, up, right, down
-    private DX: number[] = [1, 1, -1, 1];
-    private DY: number[] = [1, 1, 1, -1];
-    private DX2: number[] = [-1, 0, 1, 0];
-    private DY2: number[] = [0, -1, 0, 1];
-    private SX: number[] = [1, 0, this.N-2, 0];
-    private SY: number[] = [0, 1, 0, this.N-2];
-    private EX: number[] = [this.N, this.N, -1, this.N];
-    private EY: number[] = [this.N, this.N, this.N, -1];
 
     constructor() {
       this.score = 0;
@@ -87,94 +75,13 @@ module framework {
       for (let i = 0; i < this.N; i++) {
         const row: number[] = [];
         for (let j = 0; j < this.N; j++) {
-          if (i == 2 && j == 2) row.push(2);
-          if (i == 1 && j == 1) row.push(2);
-          else { row.push(EMPTY) };
+          row.push(EMPTY);
         }
         this.grid.push(row);
       }
     }
 
-    private updateCell(x: number, y: number, dir: number) {
-      const dx = this.DX2[dir];
-      const dy = this.DY2[dir];
-      let cx = x;
-      let cy = y;
-      let nx = cx+dx;
-      let ny = cy+dy;
-      while (0 <= nx && nx < this.N && 0 <= ny && ny < this.N) {
-        const cell = this.grid[cy][cx];
-        if (cell == EMPTY) return;
-        const adjacentCell = this.grid[ny][nx];
-        if (adjacentCell == EMPTY) {
-          this.grid[ny][nx] = cell;
-          this.grid[cy][cx] = EMPTY;
-        }
-        else if (cell == adjacentCell) {
-          this.grid[ny][nx] += cell;
-          this.grid[cy][cx] = EMPTY;
-          this.score += this.grid[ny][nx];
-        }
-        else {
-          return;
-        }
-        cx += dx;
-        cy += dy;
-        nx += dx;
-        ny += dy;
-      }
-    }
-
-    public gameover() {
-      // 空きのcellがあればgameoverではない
-      for (let x = 0; x < this.N; ++x) {
-        for (let y = 0; y < this.N; ++y) {
-          if (this.grid[y][x] == EMPTY) {
-            return false;
-          }
-          for (let dir = 0; dir < 4; ++dir) {
-            const nx = x+this.DX2[dir];
-            if (nx < 0 || nx >= this.N) continue;
-            const ny = y+this.DY2[dir];
-            if (ny < 0 || ny >= this.N) continue;
-            if (this.grid[y][x] == this.grid[ny][nx]) {
-              return false;
-            }
-          }
-        }
-      }
-      // くっつけられるcellがあればgameoverではない
-      for (let x = 0; x < this.N; ++x) {
-        for (let y = 0; y < this.N; ++y) {
-        }
-      }
-      return true;
-    }
-
-    private spawn() {
-      const emptyCells: [number, number][] = [];
-      for (let x = 0; x < this.N; ++x) {
-        for (let y = 0; y < this.N; ++y) {
-          if (this.grid[y][x] == EMPTY) {
-            emptyCells.push([x, y]);
-          }
-        }
-      }
-      if (emptyCells.length == 0) return;
-      const r1 = this.random.nextInt(emptyCells.length);
-      const spawnPos = emptyCells[r1];
-      const r2 = this.random.nextInt(this.spawnValues.length);
-      const spawnValue = this.spawnValues[r2];
-      this.grid[spawnPos[1]][spawnPos[0]] = spawnValue;
-    }
-
-    public update = (dir: number): void => { 
-      for (let x = this.SX[dir]; x != this.EX[dir]; x += this.DX[dir]) {
-        for (let y = this.SY[dir]; y != this.EY[dir]; y += this.DY[dir]) {
-          this.updateCell(x, y, dir);
-        }
-      }
-      this.spawn();
+    public update = (dir: number): void => {
     }
   }
 }
@@ -221,7 +128,7 @@ module visualizer {
     constructor() {
       this.game = new framework.Game();
       this.canvas = <HTMLCanvasElement>document.getElementById("canvas");  // TODO: IDs should be given as arguments
-      const size = 400;
+      const size = 450;
       this.canvas.height = size;  // pixels
       this.canvas.width = size;  // pixels
       this.ctx = this.canvas.getContext('2d')!;
@@ -239,14 +146,36 @@ module visualizer {
     public draw() {
       this.scoreInput.value = String(this.game.score);
 
-      this.ctx.fillStyle = "#bbada0"
-      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.fillStyle = "#bbada0";
       const W = this.canvas.width / this.game.N;
       const H = this.canvas.height / this.game.N;
-      const MARGIN = 4;
-      const W2 = W-MARGIN*2;
-      const H2 = H-MARGIN*2;
-      this.ctx.font = `${H2/2}px monospace`;
+
+      // 輪郭をdraw
+      for (let i = 0; i <= this.game.N; i++) {
+        if (i % 3 == 0) {
+          this.ctx.lineWidth = 3;
+          this.ctx.strokeStyle = "#000000";
+        }
+        else { 
+          this.ctx.lineWidth = 1;
+          this.ctx.strokeStyle = "#bbbbbb";
+        }
+        const x = i * W;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, 0);
+        this.ctx.lineTo(x, this.game.N*H);
+        this.ctx.stroke();
+        const y = i * H;
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, y);
+        this.ctx.lineTo(this.game.N*W, y);
+        this.ctx.stroke();
+      }
+
+      const MARGIN = 0;
+      const W2 = W - MARGIN * 2;
+      const H2 = H - MARGIN * 2;
+      this.ctx.font = `${H2 / 2}px monospace`;
       this.ctx.textAlign = 'center';
       for (let i = 0; i < this.game.N; i++) {
         const x = i * W + MARGIN;
@@ -254,20 +183,16 @@ module visualizer {
           const y = j * H + MARGIN;
           const value = this.game.grid[j][i];
           this.ctx.fillStyle = Visualizer.background[value];
-          this.ctx.fillRect(x, y, W2, H2);
-          if (value != EMPTY) {
-            this.ctx.fillStyle = Visualizer.color[value];
-            this.ctx.fillText(String(this.game.grid[j][i]), x+W2/2, y+3*H2/4);
-          }
+          // this.ctx.strokeRect(x, y, W2, H2);
+          // if (value != EMPTY) {
+          //   this.ctx.fillStyle = Visualizer.color[value];
+          //   this.ctx.fillText(String(this.game.grid[j][i]), x + W2 / 2, y + 3 * H2 / 4);
+          // }
         }
       }
     }
 
     public loop = () => {
-      if (this.game.gameover()) {
-        console.log("GAME OVER");
-        return;
-      }
       this.keyInput.inputLoop();
       let now = new Date().getTime();
       while (now - this.updatedTime < 80) {

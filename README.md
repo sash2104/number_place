@@ -12,3 +12,6 @@ $ npx tsc --watch
 ```
 $ open index.html
 ```
+
+## links
+- http://www.puzzle-ch.com/numpla/label.php?number=365
