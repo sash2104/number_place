@@ -68,6 +68,8 @@ module framework {
     public grid: number[][] = [];
     public score: number;
     public random: Random;
+    public choosedX: number | null = null;
+    public choosedY: number | null = null;
 
     constructor() {
       this.score = 0;
@@ -81,7 +83,10 @@ module framework {
       }
     }
 
-    public update = (dir: number): void => {
+    public update = (num: number): void => {
+      if (this.choosedX == null || this.choosedY == null) return;
+      this.grid[this.choosedY][this.choosedX] = num;
+      console.log(this.choosedX, this.choosedY, num);
     }
   }
 }
@@ -134,19 +139,42 @@ module visualizer {
       this.ctx = this.canvas.getContext('2d')!;
       this.scoreInput = <HTMLInputElement>document.getElementById("scoreInput");
       this.keyInput = new framework.cKeyboardInput();
-      // press left, up, right, down arrow
-      this.keyInput.addKeycodeCallback(37, () => this.game.update(0));
-      this.keyInput.addKeycodeCallback(38, () => this.game.update(1));
-      this.keyInput.addKeycodeCallback(39, () => this.game.update(2));
-      this.keyInput.addKeycodeCallback(40, () => this.game.update(3));
+      // press number keys
+      for (let i = 0; i < 10; ++i) {
+        this.keyInput.addKeycodeCallback(48+i, () => this.game.update(i));
+      }
+      this.canvas.addEventListener("click", e => {
+        // マウスの座標をCanvas内の座標とあわせる
+        const rect = this.canvas.getBoundingClientRect();
+        const point = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      
+        const gridX = Math.floor(point.x * this.game.N / this.canvas.width);
+        const gridY = Math.floor(point.y * this.game.N / this.canvas.height);
+        if (this.game.choosedX == gridX && this.game.choosedY == gridY) {
+          // 選択を解除する
+          this.game.choosedX = null;
+          this.game.choosedY = null;
+        }
+        else {
+          // 選択する
+          this.game.choosedX = gridX;
+          this.game.choosedY = gridY;
+        }
+      });
 
-      this.updatedTime = new Date().getTime();
+      this.updatedTime = -1;
     }
 
     public draw() {
       this.scoreInput.value = String(this.game.score);
 
-      this.ctx.fillStyle = "#bbada0";
+      // 初期化
+      this.ctx.fillStyle = "#ffffff";
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
       const W = this.canvas.width / this.game.N;
       const H = this.canvas.height / this.game.N;
 
@@ -172,33 +200,35 @@ module visualizer {
         this.ctx.stroke();
       }
 
-      const MARGIN = 0;
-      const W2 = W - MARGIN * 2;
-      const H2 = H - MARGIN * 2;
-      this.ctx.font = `${H2 / 2}px monospace`;
+      this.ctx.font = `${H / 2}px monospace`;
       this.ctx.textAlign = 'center';
       for (let i = 0; i < this.game.N; i++) {
-        const x = i * W + MARGIN;
+        const x = i * W;
         for (let j = 0; j < this.game.N; j++) {
-          const y = j * H + MARGIN;
+          const y = j * H;
           const value = this.game.grid[j][i];
-          this.ctx.fillStyle = Visualizer.background[value];
-          // this.ctx.strokeRect(x, y, W2, H2);
-          // if (value != EMPTY) {
-          //   this.ctx.fillStyle = Visualizer.color[value];
-          //   this.ctx.fillText(String(this.game.grid[j][i]), x + W2 / 2, y + 3 * H2 / 4);
-          // }
+          if (value != EMPTY) {
+            this.ctx.fillStyle = "#000000";
+            this.ctx.fillText(String(this.game.grid[j][i]), x + W / 2, y + 3 * H / 4);
+          }
         }
+      }
+
+      // 選択されたcellをdraw
+      if (this.game.choosedX != null && this.game.choosedY != null) {
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = "#ff0000";
+        this.ctx.strokeRect(this.game.choosedX*W, this.game.choosedY*H, W, H);
       }
     }
 
     public loop = () => {
       this.keyInput.inputLoop();
-      let now = new Date().getTime();
-      while (now - this.updatedTime < 80) {
-        now = new Date().getTime();
-      }
-      this.updatedTime = now;
+      // let now = new Date().getTime();
+      // while (now - this.updatedTime < 30) {
+      //   now = new Date().getTime();
+      // }
+      // this.updatedTime = now;
       requestAnimationFrame(this.loop);
       this.draw();
     }
