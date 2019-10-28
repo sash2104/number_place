@@ -1,6 +1,17 @@
 declare var GIF: any;  // for https://github.com/jnordberg/gif.js
 
 const EMPTY: number = 0;
+const startGrid: number[][] = [
+  [0,0,0,0,0,0,0,0,0],
+  [0,0,2,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0],
+  [0,1,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0]
+];
 
 module framework {
   export class Random {
@@ -66,6 +77,7 @@ module framework {
   export class Game {
     public readonly N: number = 9;
     public grid: number[][] = [];
+    public fixed: boolean[][] = []; // 初期配置のcellならtrue
     public score: number;
     public random: Random;
     public choosedX: number | null = null;
@@ -75,18 +87,29 @@ module framework {
       this.score = 0;
       this.random = new Random();
       for (let i = 0; i < this.N; i++) {
-        const row: number[] = [];
+        const row: boolean[] = [];
         for (let j = 0; j < this.N; j++) {
-          row.push(EMPTY);
+          row.push(startGrid[i][j] != 0);
         }
-        this.grid.push(row);
+        this.fixed.push(row);
+        this.grid.push(startGrid[i]);
       }
     }
 
     public update = (num: number): void => {
       if (this.choosedX == null || this.choosedY == null) return;
+      if (this.fixed[this.choosedY][this.choosedX]) return;
       this.grid[this.choosedY][this.choosedX] = num;
       console.log(this.choosedX, this.choosedY, num);
+    }
+
+    public reset = (): void => {
+      for (let i = 0; i < this.N; i++) {
+        for (let j = 0; j < this.N; j++) {
+          if (this.fixed[i][j]) continue;
+          this.grid[i][j] = EMPTY;
+        }
+      }
     }
   }
 }
@@ -99,38 +122,10 @@ module visualizer {
     private ctx: CanvasRenderingContext2D;
     private scoreInput: HTMLInputElement;
     private game: framework.Game;
-    static background: { [value: number]: string; } = {
-      0: "#cdc1b4",
-      2: "#eee4da",
-      4: "#ede0c8",
-      8: "#f2b179",
-      16: "#f59563",
-      32: "#f67c5f",
-      64: "#f65e3b",
-      128: "#edcf72",
-      256: "#edcc61",
-      512: "#edc850",
-      1024: "#edc53f",
-      2048: "#edc22e",
-      4096: "#edc22e",
-    };
-    static color: { [value: number]: string; } = {
-      0: "#776e65",
-      2: "#776e65",
-      4: "#776e65",
-      8: "#f9f6f2",
-      16: "#f9f6f2",
-      32: "#f9f6f2",
-      64: "#f9f6f2",
-      128: "#f9f6f2",
-      256: "#f9f6f2",
-      512: "#f9f6f2",
-      1024: "#f59563",
-      2048: "#f67c5f",
-      4096: "#f65e3b",
-    };
+    private resetButton: HTMLButtonElement;
 
     constructor() {
+      this.resetButton = <HTMLButtonElement>document.getElementById("reset");
       this.game = new framework.Game();
       this.canvas = <HTMLCanvasElement>document.getElementById("canvas");  // TODO: IDs should be given as arguments
       const size = 450;
@@ -143,6 +138,9 @@ module visualizer {
       for (let i = 0; i < 10; ++i) {
         this.keyInput.addKeycodeCallback(48+i, () => this.game.update(i));
       }
+      this.resetButton.addEventListener("click", e => {
+        this.game.reset();
+      });
       this.canvas.addEventListener("click", e => {
         // マウスの座標をCanvas内の座標とあわせる
         const rect = this.canvas.getBoundingClientRect();
@@ -208,7 +206,12 @@ module visualizer {
           const y = j * H;
           const value = this.game.grid[j][i];
           if (value != EMPTY) {
-            this.ctx.fillStyle = "#000000";
+            if (this.game.fixed[j][i]) {
+              this.ctx.fillStyle = "#000000";
+            }
+            else {
+              this.ctx.fillStyle = "#0000ff";
+            }
             this.ctx.fillText(String(this.game.grid[j][i]), x + W / 2, y + 3 * H / 4);
           }
         }
