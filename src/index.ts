@@ -1,17 +1,6 @@
 declare var GIF: any;  // for https://github.com/jnordberg/gif.js
 
 const EMPTY: number = 0;
-const startGrid: number[][] = [
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,2,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0],
-  [0,1,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0]
-];
 
 module framework {
   export class Random {
@@ -83,7 +72,7 @@ module framework {
     public choosedX: number | null = null;
     public choosedY: number | null = null;
 
-    constructor() {
+    constructor(startGrid: number[][]) {
       this.score = 0;
       this.random = new Random();
       for (let i = 0; i < this.N; i++) {
@@ -119,6 +108,7 @@ module visualizer {
     private updatedTime: number;
     private keyInput: framework.cKeyboardInput;
     private canvas: HTMLCanvasElement;
+    private infoDiv: HTMLDivElement;
     private ctx: CanvasRenderingContext2D;
     private scoreInput: HTMLInputElement;
     private game: framework.Game;
@@ -126,7 +116,10 @@ module visualizer {
 
     constructor() {
       this.resetButton = <HTMLButtonElement>document.getElementById("reset");
-      this.game = new framework.Game();
+      this.infoDiv = <HTMLDivElement>document.getElementById("info");
+      const info = JSON.parse(this.infoDiv.innerHTML);
+      const startGrid: number[][] = info["startGrid"];
+      this.game = new framework.Game(startGrid);
       this.canvas = <HTMLCanvasElement>document.getElementById("canvas");  // TODO: IDs should be given as arguments
       const size = 450;
       this.canvas.height = size;  // pixels
